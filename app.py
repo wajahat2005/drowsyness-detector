@@ -8,7 +8,7 @@ from PIL import Image
 # ==========================================
 st.set_page_config(page_title="Driver Drowsiness Detector", page_icon="🚗")
 st.title("🚗 AI Driver Drowsiness & Fatigue Detector")
-st.write("Upload an image of a driver to check their alert status using an ensemble of two EfficientNetB3 models.")
+st.write("Upload an image or use your camera to check the driver's alert status using an ensemble of two EfficientNetB3 models.")
 
 # ==========================================
 # 2. CACHE & LOAD MODELS
@@ -54,14 +54,32 @@ def predict_driver_state(image, target_size=(300, 300)):
         return "✅ AWAKE / NON-FATIGUE", ensemble_safe
 
 # ==========================================
-# 4. USER INTERFACE
+# 4. USER INTERFACE (UPDATED WITH CAMERA)
 # ==========================================
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+# Create tabs for different input methods
+tab1, tab2 = st.tabs(["📸 Take a Picture", "📁 Upload an Image"])
 
-if uploaded_file is not None:
-    # Display the uploaded image
-    image = Image.open(uploaded_file).convert('RGB')
-    st.image(image, caption='Uploaded Image', use_column_width=True)
+image_data = None
+
+with tab1:
+    camera_file = st.camera_input("Take a picture from your webcam/phone")
+    if camera_file is not None:
+        image_data = camera_file
+
+with tab2:
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        image_data = uploaded_file
+
+# If the user has provided an image through EITHER method, process it
+if image_data is not None:
+    # Display the image
+    image = Image.open(image_data).convert('RGB')
+    
+    # We only show the image again if they uploaded it, 
+    # because st.camera_input already shows the captured photo automatically
+    if image_data == uploaded_file:
+        st.image(image, caption='Uploaded Image', use_column_width=True)
 
     # Add a button to run the prediction
     if st.button("Analyze Driver State"):
