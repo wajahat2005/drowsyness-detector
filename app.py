@@ -47,8 +47,16 @@ def predict_driver_state(image, target_size=(300, 300)):
     ensemble_danger = (prob_drowsy + prob_fatigue) / 2.0
     ensemble_safe = (prob_awake + prob_non_fatigue) / 2.0
 
-    # Determine final output
-    if ensemble_danger > ensemble_safe:
+    # Determine maximum confidence
+    max_confidence = max(ensemble_danger, ensemble_safe)
+
+    # Define the threshold (e.g., 65%). Anything lower means the AI is guessing.
+    CONFIDENCE_THRESHOLD = 0.65 
+
+    # Determine final output based on the threshold
+    if max_confidence < CONFIDENCE_THRESHOLD:
+        return "❓ UNCERTAIN / CANNOT RECOGNIZE", max_confidence
+    elif ensemble_danger > ensemble_safe:
         return "⚠️ DROWSY / FATIGUE DETECTED", ensemble_danger
     else:
         return "✅ AWAKE / NON-FATIGUE", ensemble_safe
@@ -87,7 +95,11 @@ if image_data is not None:
             state, confidence = predict_driver_state(image)
             
             st.markdown("---")
-            if "DROWSY" in state:
+            
+            # Updated UI Logic to handle the new Uncertain state
+            if "UNCERTAIN" in state:
+                st.warning(f"**Result:** {state}\n\n*The AI is not confident enough to make a safe prediction. Please ensure the face is clearly visible and well-lit.*")
+            elif "DROWSY" in state:
                 st.error(f"**Result:** {state}")
             else:
                 st.success(f"**Result:** {state}")
